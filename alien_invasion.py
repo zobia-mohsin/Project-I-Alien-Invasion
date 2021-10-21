@@ -4,7 +4,6 @@ from ship import Ship
 from settings import Settings  # import settings module created
 import pygame
 import sys  # importing sys and pygame module
-PGE 265
 
 
 class AlienInvasion:
@@ -87,10 +86,22 @@ class AlienInvasion:
         of bullets that have disappeared of off the screen: We need to 
         detect when the bottom value of a bullet’s rect has a value of 0"""
         self.bullets.update()
+        # counting the bullets that leave the screen
         for bullet in self.bullets.copy():
             if bullet.rect.bottom <= 0:
                 self.bullets.remove(bullet)
-            # counting the bullets that leave the screen, print slows downs
+        self._check_bullet_alien_collisions()
+
+    def _check_bullet_alien_collisions(self):
+        """Respond to bullet-alien collisions."""
+        # Remove any bullets and aliens that have collided.
+        collisions = pygame.sprite.groupcollide(
+            self.bullets, self.aliens, True, True)
+
+        if not self.aliens:
+            # Destroy existing bullets and create new fleet.
+            self.bullets.empty()
+            self._create_fleet()
 
     def _create_fleet(self):
         """Create the fleet of aliens."""
@@ -127,6 +138,34 @@ class AlienInvasion:
         # we change an alien’s y-coordinate value when it’s not in the first row
         alien.rect.y = alien.rect.height + 2 * alien.rect.height * row_number
         self.aliens.add(alien)
+
+    def _check_fleet_edges(self):
+        """Respond appropriately if any aliens have reached an edge."""
+        # call check_edges() on each alien, if TRUE fleet needs to drop
+        for alien in self.aliens.sprites():
+            # TRUE then change FLEET direction and break from loop
+            if alien.check_edges():
+                self._change_fleet_direction()
+                break
+
+    def _change_fleet_direction(self):
+        """Drop the entire fleet and change the fleet's direction."""
+        # loop thorugh all the aliens and dropeach alien once if touch edge
+        for alien in self.aliens.sprites():
+            alien.rect.y += self.settings.fleet_drop_speed
+        # not in loop because only want to drop fleet ONCE
+        self.settings.fleet_direction *= -1
+
+    # to manage the movement of the fleet
+    def _update_aliens(self):
+        """Update the positions of all aliens in the fleet."""
+        """Check if the fleet is at an edge,
+        then update the positions of all aliens in the fleet."""
+        self._check_fleet_edges()
+        self.aliens.update()
+        # Look for alien-ship collisions.
+        if pygame.sprite.spritecollideany(self.ship, self.aliens):
+            print("Ship hit!!!")
 
     def _update_screen(self):  # manage updating screen
         """Update images on the screen, and flip to the new screen."""

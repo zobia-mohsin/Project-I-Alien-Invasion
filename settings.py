@@ -13,7 +13,7 @@ class Settings:
 
         # Bullet settings
         # dark gray bullets with a width of 3 pixels and a height of 15 pixels.
-        self.bullet_speed = 1.0
+        self.bullet_speed = 1.75
         self.bullet_width = 3
         self.bullet_height = 15
         self.bullet_color = (60, 60, 60)
@@ -21,3 +21,8 @@ class Settings:
 
         # Alien settings, update implemented to alien file(fleet moves)
         self.alien_speed = 1.0
+        # fleet move down the screen and to the left
+        # when it hits the right edge of the screen.
+        self.fleet_drop_speed = 10  # how quickly fleet drops
+        # fleet_direction of 1 represents right; -1 represents left.
+        self.fleet_direction = 1
