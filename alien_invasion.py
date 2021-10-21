@@ -1,9 +1,10 @@
-import sys  # importing sys and pygame module
-import pygame
-
-from settings import Settings  # import settings module created
-from ship import Ship
+from alien import Alien
 from bullet import Bullet
+from ship import Ship
+from settings import Settings  # import settings module created
+import pygame
+import sys  # importing sys and pygame module
+PGE 265
 
 
 class AlienInvasion:
@@ -25,6 +26,8 @@ class AlienInvasion:
         self.ship = Ship(self)
         # instance of bullet
         self.bullets = pygame.sprite.Group()
+        self.aliens = pygame.sprite.Group()  # instance of alien
+        self._create_fleet()  # helper method to add fleet of aliens
         # Set the background Color of the pygame
         self.bg_color = (230, 230, 230)
     # REFACTORING, manage events separtely by helper methods _
@@ -33,19 +36,12 @@ class AlienInvasion:
 
     def run_game(self):  # Main loop of the game starts here
         while True:         # Watch for keyboard and mouse events.
+
             self._check_events()
             # modify ship’s update()method on each pass through the loop:
             self.ship.update()
-            self.bullets.update()
-
-            '''Get rid of bullets that have disappeared of off the screen:
-            we need to detect when the bottom value of a bullet’s rect has a value of 0'''
-            for bullet in self.bullets.copy():
-                if bullet.rect.bottom <= 0:
-                    self.bullets.remove(bullet)
-            # counting the bullets that leave the screen, print slows downs
-            # print(len(self.bullets))
-
+            self._update_bullets()
+            self._update_aliens()  # update position of each alien
             self._update_screen()
 
     def _check_events(self):  # manage events separate of the game
@@ -82,8 +78,55 @@ class AlienInvasion:
 
     def _fire_bullet(self):
         """Create a new bullet and add it to the bullets group."""
-        new_bullet = Bullet(self)
-        self.bullets.add(new_bullet)  # add new bullets to bullets
+        if len(self.bullets) < self.settings.bullets_allowed:
+            new_bullet = Bullet(self)   # limit 3 at a time
+            self.bullets.add(new_bullet)  # add new bullets to bullets
+
+    def _update_bullets(self):
+        """Update position of bullets and get rid of old bullets. Get rid 
+        of bullets that have disappeared of off the screen: We need to 
+        detect when the bottom value of a bullet’s rect has a value of 0"""
+        self.bullets.update()
+        for bullet in self.bullets.copy():
+            if bullet.rect.bottom <= 0:
+                self.bullets.remove(bullet)
+            # counting the bullets that leave the screen, print slows downs
+
+    def _create_fleet(self):
+        """Create the fleet of aliens."""
+        # Create an alien and find the number of aliens in a row.
+        # Spacing between each alien is equal to one alien width.
+        alien = Alien(self)  # Make an alien by creating one instance of Alien.
+        # to know its height and width use attribute size for rect
+        alien_width, alien_height = alien.rect.size
+        # horizontal space and # of aliens that can fit in that space
+        available_space_x = self.settings.screen_width - (2 * alien_width)
+        number_aliens_x = available_space_x // (2 * alien_width)
+
+        # Determine the number of rows of aliens that fit on the screen.
+        ship_height = self.ship.rect.height
+        # avaliable space for rows
+        available_space_y = (self.settings.screen_height -
+                             (3 * alien_height) - ship_height)
+        number_rows = available_space_y // (2 * alien_height)
+
+        # Create the full fleet of aliens.
+        # The outer loop counts from 0 to the number of rows we want
+        for row_number in range(number_rows):
+            # The inner loop creates the aliens in one row.
+            for alien_number in range(number_aliens_x):
+                self._create_alien(alien_number, row_number)
+
+    def _create_alien(self, alien_number, row_number):
+        """Create an alien and place it in the row."""
+        alien = Alien(self)
+        alien_width, alien_height = alien.rect.size
+        # Each alien is pushed to the right one alien width from the left margin.
+        alien.x = alien_width + 2 * alien_width * alien_number
+        alien.rect.x = alien.x
+        # we change an alien’s y-coordinate value when it’s not in the first row
+        alien.rect.y = alien.rect.height + 2 * alien.rect.height * row_number
+        self.aliens.add(alien)
 
     def _update_screen(self):  # manage updating screen
         """Update images on the screen, and flip to the new screen."""
@@ -96,6 +139,9 @@ class AlienInvasion:
         # we loop through the sprites in bullets and call draw_bullet() on each one
         for bullet in self.bullets.sprites():
             bullet.draw_bullet()
+
+        # to make alien appear on screen, draw
+        self.aliens.draw(self.screen)
 
         # Make the most recently drawn screen visible, getting rid of previous
         # events and updating according to recent events
