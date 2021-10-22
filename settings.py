@@ -10,6 +10,7 @@ class Settings:
 
         # Ship settings (SPEED)
         self.ship_speed = 1.5  # deciaml so make modificatin to int of ship.py
+        self.ship_limit = 3  # the number of ships the player starts with.
 
         # Bullet settings
         # dark gray bullets with a width of 3 pixels and a height of 15 pixels.

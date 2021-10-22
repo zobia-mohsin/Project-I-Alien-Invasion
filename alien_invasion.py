@@ -1,9 +1,11 @@
-from alien import Alien
-from bullet import Bullet
-from ship import Ship
-from settings import Settings  # import settings module created
 import pygame
 import sys  # importing sys and pygame module
+from alien import Alien
+from bullet import Bullet
+from game_stats import GameStats
+from ship import Ship
+from settings import Settings  # import settings module created
+from time import sleep  # pause the game when ship is hit
 
 
 class AlienInvasion:
@@ -21,6 +23,10 @@ class AlienInvasion:
         self.settings.screen_height = self.screen.get_rect().height
 
         pygame.display.set_caption("Alien Invasion")
+
+        # Create an instance to store game statistics.
+        self.stats = GameStats(self)  # after creating the game window
+
         # created an instance of ship
         self.ship = Ship(self)
         # instance of bullet
@@ -36,12 +42,15 @@ class AlienInvasion:
     def run_game(self):  # Main loop of the game starts here
         while True:         # Watch for keyboard and mouse events.
 
-            self._check_events()
+            self._check_events()  # always have to check, q button, updating screen
+
+            # check these events when game is active, game elements
             # modify ship’s update()method on each pass through the loop:
-            self.ship.update()
-            self._update_bullets()
-            self._update_aliens()  # update position of each alien
-            self._update_screen()
+            if self.stats.game_active:
+                self.ship.update()
+                self._update_bullets()
+                self._update_aliens()  # update position of each alien
+                self._update_screen()
 
     def _check_events(self):  # manage events separate of the game
         """Respond to keypresses and mouse events."""
@@ -156,6 +165,17 @@ class AlienInvasion:
         # not in loop because only want to drop fleet ONCE
         self.settings.fleet_direction *= -1
 
+    # to check if alien hits bottom of screen, respond same way
+    # as if hit ship
+    def _check_aliens_bottom(self):
+        """Check if any aliens have reached the bottom of the screen."""
+        screen_rect = self.screen.get_rect()
+        for alien in self.aliens.sprites():
+            if alien.rect.bottom >= screen_rect.bottom:
+                # Treat this the same as if the ship got hit.
+                self._ship_hit()  # call ship_hit if hits bottom
+                break
+
     # to manage the movement of the fleet
     def _update_aliens(self):
         """Update the positions of all aliens in the fleet."""
@@ -163,9 +183,33 @@ class AlienInvasion:
         then update the positions of all aliens in the fleet."""
         self._check_fleet_edges()
         self.aliens.update()
-        # Look for alien-ship collisions.
+        # Look for alien-ship collisions. No collisions-->NONE returned
         if pygame.sprite.spritecollideany(self.ship, self.aliens):
-            print("Ship hit!!!")
+            self._ship_hit()  # replace print statement
+        # Look for aliens hitting the bottom of the screen.
+        self._check_aliens_bottom()
+
+    def _ship_hit(self):
+        """Respond to the ship being hit by an alien."""
+        # if player has atleast one ship left based on ship count then:
+        if self.stats.ships_left > 0:
+
+            # Decrement ships_left by one after alien hits ship
+            self.stats.ships_left -= 1
+
+            # Get rid of any remaining aliens and bullets.
+            self.aliens.empty()
+            self.bullets.empty()
+
+            # Create a new fleet and center the ship.
+            self._create_fleet()
+            self.ship.center_ship()
+
+            # Pause afte updates but before changes execute for .5 seconds
+            sleep(0.5)
+        # if player has no ships left, FALSE, game not active, game ends
+        else:
+            self.stats.game_active = False
 
     def _update_screen(self):  # manage updating screen
         """Update images on the screen, and flip to the new screen."""
