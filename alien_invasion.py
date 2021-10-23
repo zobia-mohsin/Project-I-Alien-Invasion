@@ -3,6 +3,7 @@ import sys  # importing sys and pygame module
 from alien import Alien
 from bullet import Bullet
 from game_stats import GameStats
+from button import Button
 from ship import Ship
 from settings import Settings  # import settings module created
 from time import sleep  # pause the game when ship is hit
@@ -35,6 +36,8 @@ class AlienInvasion:
         self._create_fleet()  # helper method to add fleet of aliens
         # Set the background Color of the pygame
         self.bg_color = (230, 230, 230)
+        # Make the Play button,INIT: we only need one play button
+        self.play_button = Button(self, "Play")
     # REFACTORING, manage events separtely by helper methods _
     # contains an event loop and code that manages screen updates
     '''To update all instances of the GAME as it is running'''
@@ -61,7 +64,35 @@ class AlienInvasion:
                 self._check_keydown_events(event)
             elif event.type == pygame.KEYUP:
                 self._check_keyup_events(event)
+            # To monitor mouse events over the play button ONLY
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+                self._check_play_button(mouse_pos)
 
+    def _check_play_button(self, mouse_pos):
+        """Start a new game when the player clicks Play. To check 
+        whether the point of the mouse click overlaps the 
+        region defined by the Play button’s rect"""
+
+        button_clicked = self.play_button.rect.collidepoint(mouse_pos)
+        # the game will only start if the play button
+        # is clicked and game is not currently active
+        if button_clicked and not self.stats.game_active:
+            # Reset the game statistics.
+            self.stats.reset_stats()
+            self.stats.game_active = True
+
+            # Get rid of any remaining aliens and bullets.
+            self.aliens.empty()
+            self.bullets.empty()
+
+            # Create a new fleet and center the ship
+            # evertime you press the play button
+            self._create_fleet()
+            self.ship.center_ship()
+
+            # Hide the mouse cursor false to set_visible
+            pygame.mouse.set_visible(False)
     """Respond to keypresses."""
 
     def _check_keydown_events(self, event):
@@ -111,6 +142,8 @@ class AlienInvasion:
             # Destroy existing bullets and create new fleet.
             self.bullets.empty()
             self._create_fleet()
+            # increase the game’s tempo by calling increase_speed()
+            self.settings.increase_speed()
 
     def _create_fleet(self):
         """Create the fleet of aliens."""
@@ -210,6 +243,8 @@ class AlienInvasion:
         # if player has no ships left, FALSE, game not active, game ends
         else:
             self.stats.game_active = False
+            # cursor visible again as soon as the game becomes inactive
+            pygame.mouse.set_visible(True)
 
     def _update_screen(self):  # manage updating screen
         """Update images on the screen, and flip to the new screen."""
@@ -225,6 +260,13 @@ class AlienInvasion:
 
         # to make alien appear on screen, draw
         self.aliens.draw(self.screen)
+
+        # Draw the play button if the game is inactive.
+        '''Button drawn after all elements and before the
+        screen updates so it appears on top of elements in
+        (if block) inactive mode of the game'''
+        if not self.stats.game_active:
+            self.play_button.draw_button()
 
         # Make the most recently drawn screen visible, getting rid of previous
         # events and updating according to recent events
