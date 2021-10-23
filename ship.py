@@ -1,11 +1,13 @@
 import pygame
 # treat all elements like rectangles
+from pygame.sprite import Sprite  # to create group of ships
+
+
 # class to manage the ship and have it in the game
-
-
-class Ship:
+class Ship(Sprite):
     def __init__(self, ai_game):  # reference to instance of AlienInvasion
         """Initialize the ship and set its starting position."""
+        super().__init__()
         self.screen = ai_game.screen  # assign screen to attribute of ship
         # settings attribute for Ship, so we can use it in update()
         self.settings = ai_game.settings
