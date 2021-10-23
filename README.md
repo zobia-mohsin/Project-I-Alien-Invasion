@@ -14,3 +14,17 @@ Project I: Alien Invasion using PyGame
 
     bulltet.py:
     Firing and shooting bullets.
+
+    alien.py:
+    Creates all the aliens displayed on the main game screen.
+
+    game_stats.py:
+    Keeps track of game levels and score, resets the elements that are supposed
+    restart when the game starts again.
+
+    scoreboard.py:
+    Keeps track of score when the game is running and remembers the high score.
+    Actively compares current score to high score and updates accordingly.
+
+    button.py:
+    Creates and draws the play button in the center of the game screen.
